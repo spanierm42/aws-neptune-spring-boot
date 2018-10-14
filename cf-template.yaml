@@ -1,0 +1,190 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Neptune full stack with gremlin and rd4j console
+Parameters:
+  EC2SSHKeyPairName:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instances.
+      Required Input
+    Type: AWS::EC2::KeyPair::KeyName
+    ConstraintDescription: Must be the name of an existing EC2 KeyPair in same region.
+  Env:
+    Description: Environment tag, e.g. prod, nonprod.
+    Default: test
+    Type: String
+    AllowedPattern: "[a-z0-9]+"
+    MaxLength: 15
+Resources:
+  NeptuneStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL:
+        Fn::Join:
+        - ''
+        - - https://s3.amazonaws.com/aws-neptune-customer-samples/v2/cloudformation-templates/neptune-base-stack.json
+      TimeoutInMinutes: '15'
+      Parameters:
+        Env:
+          Ref: Env
+        DBReplicaIdentifierSuffix: ''
+        DbInstanceType: db.r4.large
+        NeptuneQueryTimeout: 20000
+        NeptuneEnableAuditLog: 0
+        IamAuthEnabled: 'false'
+  NeptuneEC2Client:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL:
+        Fn::Join:
+        - ''
+        - - https://s3.amazonaws.com/aws-neptune-customer-samples/v2/cloudformation-templates/neptune-ec2-client.json
+      TimeoutInMinutes: '30'
+      Parameters:
+        Env:
+          Ref: Env
+        EC2SSHKeyPairName:
+          Ref: EC2SSHKeyPairName
+        EC2ClientInstanceType: t2.micro
+        SetupGremlinConsole: 'true'
+        SetupRDF4JConsole: 'true'
+        AttachBulkloadIAMRoleToNeptuneCluster: 'true'
+        VPC:
+          Fn::GetAtt:
+          - NeptuneStack
+          - Outputs.VPC
+        Subnet:
+          Fn::GetAtt:
+          - NeptuneStack
+          - Outputs.PublicSubnet1
+        NeptuneDBCluster:
+          Fn::GetAtt:
+          - NeptuneStack
+          - Outputs.DBClusterId
+        NeptuneDBClusterEndpoint:
+          Fn::GetAtt:
+          - NeptuneStack
+          - Outputs.DBClusterEndpoint
+        NeptuneDBClusterPort:
+          Fn::GetAtt:
+          - NeptuneStack
+          - Outputs.DBClusterPort
+        NeptuneLoadFromS3IAMRoleArn:
+          Fn::GetAtt:
+          - NeptuneStack
+          - Outputs.NeptuneLoadFromS3IAMRoleArn
+        NeptuneSG:
+          Fn::GetAtt:
+          - NeptuneStack
+          - Outputs.NeptuneSG
+        NeptuneEC2InstanceProfile:
+          Fn::GetAtt:
+          - NeptuneStack
+          - Outputs.NeptuneEC2InstanceProfile
+Outputs:
+  DBClusterId:
+    Description: Neptune Cluster Identifier
+    Value:
+      Fn::GetAtt:
+      - NeptuneStack
+      - Outputs.DBClusterId
+  DBSubnetGroupId:
+    Description: Neptune DBSubnetGroup Identifier
+    Value:
+      Fn::GetAtt:
+      - NeptuneStack
+      - Outputs.DBSubnetGroupId
+  DBClusterResourceId:
+    Description: Neptune Cluster Resource Identifier
+    Value:
+      Fn::GetAtt:
+      - NeptuneStack
+      - Outputs.DBClusterResourceId
+  DBClusterEndpoint:
+    Description: Master Endpoint for Neptune Cluster
+    Value:
+      Fn::GetAtt:
+      - NeptuneStack
+      - Outputs.DBClusterEndpoint
+  DBInstanceEndpoint:
+    Description: Master Instance Endpoint
+    Value:
+      Fn::GetAtt:
+      - NeptuneStack
+      - Outputs.DBInstanceEndpoint
+  SparqlEndpoint:
+    Description: Sparql Endpoint for Neptune
+    Value:
+      Fn::GetAtt:
+      - NeptuneStack
+      - Outputs.SparqlEndpoint
+  GremlinEndpoint:
+    Description: Gremlin Endpoint for Neptune
+    Value:
+      Fn::GetAtt:
+      - NeptuneStack
+      - Outputs.GremlinEndpoint
+  LoaderEndpoint:
+    Description: Loader Endpoint for Neptune
+    Value:
+      Fn::GetAtt:
+      - NeptuneStack
+      - Outputs.LoaderEndpoint
+  DBClusterReadEndpoint:
+    Description: DB cluster Read Endpoint
+    Value:
+      Fn::GetAtt:
+      - NeptuneStack
+      - Outputs.DBClusterReadEndpoint
+  DBClusterPort:
+    Description: Port for the Neptune Cluster
+    Value:
+      Fn::GetAtt:
+      - NeptuneStack
+      - Outputs.DBClusterPort
+  NeptuneLoadFromS3IAMRoleArn:
+    Description: IAM Role for loading data in Neptune
+    Value:
+      Fn::GetAtt:
+      - NeptuneStack
+      - Outputs.NeptuneLoadFromS3IAMRoleArn
+  NeptuneIamAuthUser:
+    Description: IAM User for IAM Auth
+    Value:
+      Fn::GetAtt:
+      - NeptuneStack
+      - Outputs.NeptuneIamAuthUser
+  EC2Client:
+    Description: EC2 client Identifier
+    Value:
+      Fn::GetAtt:
+      - NeptuneEC2Client
+      - Outputs.EC2Client
+  SSHAccess:
+    Description: This is how you gain remote access to the EC2 client.
+    Value:
+      Fn::GetAtt:
+      - NeptuneEC2Client
+      - Outputs.SSHAccess
+  VPC:
+    Description: VPC
+    Value:
+      Fn::GetAtt:
+      - NeptuneStack
+      - Outputs.VPC
+  Subnet1:
+    Description: Subnet1
+    Value:
+      Fn::GetAtt:
+      - NeptuneStack
+      - Outputs.PublicSubnet1
+  Subnet2:
+    Description: Subnet2
+    Value:
+      Fn::GetAtt:
+      - NeptuneStack
+      - Outputs.PublicSubnet2
+  Subnet3:
+    Description: Subnet3
+    Value:
+      Fn::GetAtt:
+      - NeptuneStack
+      - Outputs.PublicSubnet3

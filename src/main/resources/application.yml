@@ -1,0 +1,5 @@
+gremlin:
+  endpoint: <gremlin-endpoint>
+  port: "8182"
+  username: /dbs/your-db-name/colls/your-collection-name
+  password: your-password
