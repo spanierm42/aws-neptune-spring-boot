@@ -7,7 +7,7 @@ import com.microsoft.spring.data.gremlin.annotation.EdgeTo
 import com.microsoft.spring.data.gremlin.annotation.Graph
 import com.microsoft.spring.data.gremlin.annotation.Vertex
 import com.microsoft.spring.data.gremlin.annotation.VertexSet
-import com.microsoft.spring.data.gremlin.common.GremlinConfiguration
+import com.microsoft.spring.data.gremlin.common.GremlinConfig
 import com.microsoft.spring.data.gremlin.config.AbstractGremlinConfiguration
 import com.microsoft.spring.data.gremlin.repository.GremlinRepository
 import com.microsoft.spring.data.gremlin.repository.config.EnableGremlinRepositories
@@ -24,13 +24,14 @@ class GremlinConfiguration(
         @Autowired
         private val gremlinProperties: GremlinProperties
 ) : AbstractGremlinConfiguration() {
-    override fun getGremlinConfiguration(): GremlinConfiguration {
-        return GremlinConfiguration().apply {
-            endpoint = gremlinProperties.endpoint
-            port = gremlinProperties.port
-            username = gremlinProperties.username
-            password = gremlinProperties.password
-        }
+    override fun getGremlinConfig(): GremlinConfig {
+        return GremlinConfig.defaultBuilder()
+                .endpoint(gremlinProperties.endpoint)
+                .port(gremlinProperties.port!!)
+                .username(gremlinProperties.username)
+                .password(gremlinProperties.password)
+                .sslEnabled(gremlinProperties.sslEnabled)
+                .build()
     }
 }
 
@@ -38,42 +39,41 @@ class GremlinConfiguration(
 @ConfigurationProperties("gremlin")
 class GremlinProperties {
     var endpoint: String? = null
-    var port: String? = null
+    var port: Int? = null
     var username: String? = null
     var password: String? = null
+    var sslEnabled: Boolean = false
 }
 
 @Repository
-interface PersonRepository : GremlinRepository<Person, String> {
-    fun findByName(name: String): List<Person>
-}
+interface PersonRepository : GremlinRepository<Person, String>
 
 @Vertex
 data class Person(
         @Id
-        val id: String,
-        val name: String,
-        val age: String
+        var id: String,
+        var name: String,
+        var age: String
 )
 
 @Edge
 data class Relation(
         @Id
-        val id: String,
-        val name: String,
+        var id: String,
+        var name: String,
         @EdgeFrom
-        val personFrom: Person,
+        var personFrom: Person,
         @EdgeTo
-        val personTo: Person
+        var personTo: Person
 )
 
 @Graph
 class Network(
         @Id
-        private val id: String
+        private var id: String
 ) {
     @VertexSet
-    private val vertices = mutableListOf<Person>()
+    private var vertices = mutableListOf<Person>()
     @EdgeSet
-    private val edges = mutableListOf<Relation>()
+    private var edges = mutableListOf<Relation>()
 }

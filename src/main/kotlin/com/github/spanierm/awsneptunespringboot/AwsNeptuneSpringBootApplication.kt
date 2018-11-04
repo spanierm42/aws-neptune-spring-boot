@@ -65,12 +65,59 @@ class GremlinDirectConnection(
 
 @Component
 class SpringDataGremlinConnection(
-        @Autowired
         val personRepository: PersonRepository
 ) : CommandLineRunner {
     override fun run(vararg args: String?) {
-        val testUser = Person("PERSON_ID", "PERSON_NAME", "PERSON_AGE")
+        print("""
+
+
+            personRepository.deleteAll()
+
+
+
+        """.trimIndent())
         personRepository.deleteAll()
+
+        print("""
+
+
+            personRepository.vertexCount() = ${personRepository.vertexCount()}
+
+
+
+        """.trimIndent())
+
+        print("""
+
+
+            personRepository.edgeCount() = ${personRepository.edgeCount()}
+
+
+
+        """.trimIndent())
+
+        print("""
+
+
+            personRepository.count() = ${personRepository.count()}
+
+
+
+        """.trimIndent())
+
+        val testUser = Person(
+                id = "PERSON_ID",
+                name = "PERSON_NAME",
+                age = "PERSON_AGE"
+        )
+        print("""
+
+
+            personRepository.save($testUser)
+
+
+
+        """.trimIndent())
         personRepository.save(testUser)
     }
 }
